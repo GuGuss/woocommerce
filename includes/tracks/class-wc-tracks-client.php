@@ -86,9 +86,39 @@ class WC_Tracks_Client {
 	}
 
 	/**
-	 * Grabs the user's anon id from cookies, or generates and sets a new one
+	 * Get a user's identity to send to Tracks. If Jetpack exists, default to its implementation.
 	 *
-	 * @TODO: Determine the best way to identify sites/users with/without Jetpack connection.
+	 * @param int $user_id User id.
+	 * @return array Identity properties.
+	 */
+	public static function get_identity( $user_id ) {
+		if ( class_exists( 'Jetpack' ) ) {
+			include_once( ABSPATH . 'wp-content/plugins/jetpack/_inc/lib/tracks/client.php' );
+
+			if ( function_exists( 'jetpack_tracks_get_identity' ) ) {
+				return jetpack_tracks_get_identity( $user_id );
+			}
+		}
+
+		$anon_id = get_user_meta( $user_id, 'woo_tracks_anon_id', true );
+		if ( ! $anon_id ) {
+			$anon_id = self::get_anon_id();
+			add_user_meta( $user_id, 'woo_tracks_anon_id', $anon_id, false );
+		}
+
+		if ( ! isset( $_COOKIE['tk_ai'] ) && ! headers_sent() ) {
+			setcookie( 'tk_ai', $anon_id );
+		}
+
+		return array(
+			'_ut' => 'anon',
+			'_ui' => $anon_id,
+		);
+
+	}
+
+	/**
+	 * Grabs the user's anon id from cookies, or generates and sets a new one
 	 *
 	 * @return string An anon id for the user
 	 */
