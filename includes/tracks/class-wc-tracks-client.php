@@ -100,10 +100,18 @@ class WC_Tracks_Client {
 			}
 		}
 
-		$anon_id = get_user_meta( $user_id, 'woo_tracks_anon_id', true );
+		// Start with a previously set cookie.
+		$anon_id = isset( $_COOKIE['tk_ai'] ) ? $_COOKIE['tk_ai'] : false;
+
+		// If there is no cookie, apply a saved id.
+		if ( ! $anon_id ) {
+			$anon_id = get_user_meta( $user_id, 'woo_tracks_anon_id', true );
+		}
+
+		// If an id is still not found, create one and save it.
 		if ( ! $anon_id ) {
 			$anon_id = self::get_anon_id();
-			add_user_meta( $user_id, 'woo_tracks_anon_id', $anon_id, false );
+			update_user_meta( $user_id, 'woo_tracks_anon_id', $anon_id );
 		}
 
 		if ( ! isset( $_COOKIE['tk_ai'] ) && ! headers_sent() ) {
@@ -128,7 +136,7 @@ class WC_Tracks_Client {
 		if ( ! isset( $anon_id ) ) {
 
 			// Did the browser send us a cookie?
-			if ( isset( $_COOKIE['tk_ai'] ) && preg_match( '#^[A-Za-z0-9+/=]{24}$#', $_COOKIE['tk_ai'] ) ) {
+			if ( isset( $_COOKIE['tk_ai'] ) ) {
 				$anon_id = $_COOKIE['tk_ai'];
 			} else {
 
